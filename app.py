@@ -40,6 +40,15 @@ def handle_tasks():
     
     tasks = Task.query.all()
     return jsonify([{"id": t.id, "title": t.title} for t in tasks])
-
+# Add this route below your handle_tasks function
+@app.route('/tasks/<int:id>', methods=['DELETE'])
+def delete_task(id):
+    task = Task.query.get(id)
+    if task:
+        db.session.delete(task)
+        db.session.commit()
+        return jsonify({"message": "Deleted"}), 200
+    return jsonify({"message": "Not found"}), 404
 if __name__ == "__main__":
     app.run()
+
