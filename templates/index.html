@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>Tasks</title></head>
+<body>
+    <input id="t" type="text"><button onclick="add()">Add</button>
+    <ul id="list"></ul>
+    <script>
+        async function load() {
+            const r = await fetch('/tasks');
+            const data = await r.json();
+            document.getElementById('list').innerHTML = data.map(t => `<li>${t.title}</li>`).join('');
+        }
+        async function add() {
+            const val = document.getElementById('t').value;
+            await fetch('/tasks', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title: val})
+            });
+            load();
+        }
+        load();
+    </script>
+</body>
+</html>
