@@ -92,13 +92,22 @@
             loadTasks();
         }
 
-        async function deleteTask(id) {
-            // Optional: If you update app.py to handle DELETE requests
-            // For now, this is a UI placeholder.
-            alert("Delete clicked for ID: " + id + ". To make this work, we need to add the DELETE route to app.py!");
-        }
+       async function deleteTask(id) {
+    // Send the DELETE request to the server
+    const res = await fetch(`/tasks/${id}`, {
+        method: 'DELETE'
+    });
+
+    if (res.ok) {
+        // Refresh the list after deleting
+        loadTasks();
+    } else {
+        alert("Failed to delete the task.");
+    }
+}
 
         loadTasks();
     </script>
 </body>
 </html>
+
