@@ -12,37 +12,43 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-6">
 
-    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden fade-in">
-        <div class="bg-indigo-600 p-8 text-white">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden fade-in border border-white">
+        
+        <div class="bg-indigo-600 p-8 text-white shadow-lg">
             <h1 class="text-3xl font-bold tracking-tight">Daily Tasks</h1>
-            <p id="counter" class="text-indigo-200 mt-1 text-sm font-medium">Loading tasks...</p>
+            <p id="counter" class="text-indigo-100 mt-1 text-sm font-medium">Checking tasks...</p>
         </div>
 
-        <div class="p-6 bg-white border-b border-gray-100">
+        <div class="p-6 bg-white border-b border-slate-100">
             <div class="flex gap-3">
                 <input type="text" id="taskInput" 
-                    class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-gray-700"
-                    placeholder="What's on your mind?">
+                    class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-700"
+                    placeholder="What needs to be done?">
                 <button onclick="addTask()" 
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-indigo-200 active:scale-95">
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95">
                     Add
                 </button>
             </div>
         </div>
 
-        <ul id="taskList" class="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
+        <ul id="taskList" class="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
             </ul>
     </div>
 
     <script>
-        // Update the Task Counter
+        // Update the task counter display
         function updateCounter(count) {
             const counter = document.getElementById('counter');
-            counter.innerText = count === 1 ? '1 task remaining' : `${count} tasks remaining`;
+            if (count === 0) {
+                counter.innerText = "You're all done! 🎉";
+            } else {
+                counter.innerText = count === 1 ? '1 task remaining' : `${count} tasks remaining`;
+            }
         }
 
+        // FETCH tasks from the Python backend
         async function loadTasks() {
             const list = document.getElementById('taskList');
             try {
@@ -53,20 +59,21 @@
 
                 if (tasks.length === 0) {
                     list.innerHTML = `
-                        <div class="p-12 text-center">
-                            <p class="text-gray-400">All caught up! 🎉</p>
+                        <div class="p-12 text-center fade-in">
+                            <p class="text-slate-400 italic">No tasks yet. Add one above!</p>
                         </div>`;
                     return;
                 }
 
                 list.innerHTML = tasks.map(t => `
-                    <li class="p-5 flex items-center justify-between hover:bg-gray-50 transition-all group fade-in">
+                    <li class="p-5 flex items-center justify-between hover:bg-slate-50 transition-all group fade-in">
                         <div class="flex items-center gap-4">
-                            <div class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(79,70,229,0.4)]"></div>
-                            <span class="text-gray-700 font-semibold">${t.title}</span>
+                            <div class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(79,70,229,0.3)]"></div>
+                            <span class="text-slate-700 font-semibold">${t.title}</span>
                         </div>
                         <button onclick="deleteTask(${t.id})" 
-                            class="text-gray-300 hover:text-red-500 transition-colors p-2">
+                            class="text-slate-300 hover:text-red-500 transition-colors p-2"
+                            title="Delete task">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -74,40 +81,49 @@
                     </li>
                 `).join('');
             } catch (err) {
-                list.innerHTML = '<li class="p-6 text-center text-red-500 font-medium">Server Connection Error</li>';
+                list.innerHTML = '<li class="p-6 text-center text-red-500 font-medium">Error connecting to server</li>';
             }
         }
 
+        // POST a new task to the Python backend
         async function addTask() {
             const input = document.getElementById('taskInput');
-            if (!input.value.trim()) return;
+            const title = input.value.trim();
+            if (!title) return;
 
-            await fetch('/tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: input.value })
-            });
+            try {
+                const res = await fetch('/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title })
+                });
 
-            input.value = '';
-            loadTasks();
+                if (res.ok) {
+                    input.value = '';
+                    loadTasks(); // Refresh list
+                }
+            } catch (err) {
+                console.error("Error adding task:", err);
+            }
         }
 
-       async function deleteTask(id) {
-    // Send the DELETE request to the server
-    const res = await fetch(`/tasks/${id}`, {
-        method: 'DELETE'
-    });
+        // DELETE a task from the Python backend
+        async function deleteTask(id) {
+            try {
+                const res = await fetch(`/tasks/${id}`, {
+                    method: 'DELETE'
+                });
 
-    if (res.ok) {
-        // Refresh the list after deleting
-        loadTasks();
-    } else {
-        alert("Failed to delete the task.");
-    }
-}
+                if (res.ok) {
+                    loadTasks(); // Refresh list
+                }
+            } catch (err) {
+                console.error("Error deleting task:", err);
+            }
+        }
 
+        // Load tasks immediately when page opens
         loadTasks();
     </script>
 </body>
 </html>
-
